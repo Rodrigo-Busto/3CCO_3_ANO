@@ -9,11 +9,8 @@ terraform {
 
 provider "aws" {
   region = "us-east-1"
-  access_key = "ASIAQMPI7DF6E4OZ3QKJ"
-  secret_key = <<EOF
-    MTRcYyU2lDs7jiYwXo3CYdjxOcjmNAavYZCCpL59
-    aws_session_token = FwoGZXIvYXdzEFAaDASHFJeauyuGKS/++yLFAXZtdVGAArc4zYvxR+j3pOAxpwc05hqts2rTyDJ6uw3aQQRHZXUz0A6jb9Jks2+YZUqVVln0HuTxMAgZcpBF4EwiyFJvQxCwEGwnPvOopYtqYr5F7umpdSvnYQXe48Cfdccy6IIac9XqP6am/F8e6qn6iwcdzc2fw8DMH/e57gdSAkPdfoQR9OJ26d9eK9G4fgex+TiJRgLDD5IwOzcdLHUMkro0By7IK6iH8TVZHrx1hR+0RUOSursoWrjKxo5JMjSvDyQ2KLqK4JAGMi2AEpAUlQexC/Qrb4vfQIC2KGI0ihOirNKMyqaNPkRDBA9OVNjihr453JeWhqQ=
-    EOF
+  access_key = "<ACCESS_KEY>"
+  secret_key = "<SECRET_KEY>"
 }
 
 module "vpc" {
