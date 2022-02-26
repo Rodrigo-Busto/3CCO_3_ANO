@@ -8,10 +8,10 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
-  access_key = "ASIAQMPI7DF6D3E5LR65"
-  secret_key = "PTBANGeWSWk80m0Y7CPu7i3tSvzNWn4UA7WRuqSB"
-  token = "FwoGZXIvYXdzEGkaDIwqV63jv3DeDrlaJiLFAU9qGA+cu/P7CHbtH9/TV9dGZWdCt9mYnLBEmvkOfQ6NnxZDerQF6HInYeBffFkdbiMCrQ602wRecEtGAd+2WHbqCbNjGD5k8Kpv3ginpVvEoyp8ciOg76XKGpjbbbX5iAkAV/qaokjBSeP2i1hi8KEVY5EBTrInW6/8jHD7VaOXQApyRiAfd5LH9OCU5cnVSa8MdAUxOL9s0Dyuhk89LbYCqnCkJwrV0cuEDqV+Lhe5/glyASfcn4iwDw7n8WSfqeaaMTXCKK/b5ZAGMi0ABepenzN8Ed9d3NyC6bXPiOgMt7JGyhkPTbp52MIvPmQgNuRZyO3M9XTn4rc="
+  region     = "us-east-1"
+  access_key = "<ACCESS_KEY>"
+  secret_key = "<SECRET>"
+  token      = "<TOKEN>"
 }
 
 module "vpc" {
@@ -24,23 +24,24 @@ module "vpc" {
   private_subnets = ["10.0.1.0/24"]
   public_subnets  = ["10.0.101.0/24"]
 
-  enable_nat_gateway = false
-  single_nat_gateway = false
+  enable_nat_gateway     = false
+  single_nat_gateway     = false
   one_nat_gateway_per_az = false
-  enable_vpn_gateway = false
+  enable_vpn_gateway     = false
 
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = "dev"
   }
 }
+
 module "ec2_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "~> 3.0"
 
   name = "jupyter-instance"
 
-  ami                    = "ami-ebd02392"
+  ami                    = "ami-04505e74c0741db8d"
   instance_type          = "t2.micro"
   key_name               = aws_key_pair.jupyter_key.key_name
   monitoring             = true
@@ -53,13 +54,11 @@ module "ec2_instance" {
   }
 }
 
-#TODO gerar chave
 resource "aws_key_pair" "jupyter_key" {
-  key_name = "jupyter_key"
-  public_key = "<SECRET>"
+  key_name   = "jupyter-instance-key"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDiVqN2wVjshA8kZeSX2slBKFCdS+lZeYpfBFLfxVKi7VlsaFvayLHYmk5GArSL7BujQbqx126LY8/KX6QgT+YmhYlpCYcFn0d4bfSMGAdB7P3YKhHShK9v8lA3SFbiu26POFrVJuDApXiZifkaSb7cVem+ZuPnYIkCFGxE70ewmtkSvKEo/6CZBJMBJa6kco/SFcXFckE4ibX4M2TDBWsQMMYpHqC6+gCI7u/TYjf4XI0+44cLOERA0tswI/U8/kF4ni17ZSruHlDD6AHBNfRlCdj2t7oNfLZWhDRlDtOY36JsADWXaAZlhvvOLchRUHey9N3OynD/YbJrAs1Xy9u2OgXACaC9HHIXZac+32LZf1yZ7nBqXCpZ2uxZ/+jypKPbFOAMJSoUPYn6QmJKbw8A9KB9wGHCHrEE9bzWo8KamBDXgB+mXyq9yDDOtvOllJr3G89q8WCQ+GTXBvF8QvWxTnCtLz4Yhe22m+FMaTiNIRYBNeNV+QBNIlXzk3GBw30= rodrigo@DESKTOP-77PB1AB"
 }
 
-# TODO fechar infress all
 module "ssh_sg" {
   source = "terraform-aws-modules/security-group/aws//modules/ssh"
 
@@ -67,10 +66,10 @@ module "ssh_sg" {
   description = "Security group for ssh comunication publicly open"
   vpc_id      = module.vpc.vpc_id
 
-  ingress_cidr_blocks = ["0.0.0.0/0"]
+  ingress_cidr_blocks    = ["0.0.0.0/0"]
+  auto_ingress_with_self = []
 }
 
-#TODO abrir egress all
 module "jupyter_sg" {
   source = "terraform-aws-modules/security-group/aws"
 
@@ -83,8 +82,40 @@ module "jupyter_sg" {
       from_port   = 8888
       to_port     = 8888
       protocol    = "tcp"
-      description = "Jupyter Lab ports"
+      description = "Jupyter Lab port"
       cidr_blocks = "0.0.0.0/0"
     },
   ]
+
+  egress_with_cidr_blocks = [
+    {
+      rule        = "all-all"
+      description = "Jupyter Lab ports"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
+}
+
+resource "null_resource" "provisioning_jupyter" {
+  triggers = {
+    instance = module.ec2_instance.id
+  }
+
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    private_key = file("../jupyter-instance-key.pem")
+    host        = module.ec2_instance.public_ip
+  }
+
+  provisioner "file" {
+    source      = "./jupyter-instance/"
+    destination = "/home/ubuntu"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "cd /home/ubuntu", "sh startup.sh"
+    ]
+  }
 }
