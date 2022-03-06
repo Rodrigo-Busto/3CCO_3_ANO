@@ -2,7 +2,8 @@ import time
 from sqlalchemy import create_engine
 import pandas as pd
 import logging
-import sys
+import psutil
+import os
 
 def main():
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s')
@@ -18,16 +19,16 @@ def gerar_dado(n):
     start = time.time()
     acumul = 0
     for i in range(1, n+1):
-        acumul += 1
+        acumul += i
     end = time.time()
-    print(sys.getsizeof(acumul))
-    return { 'iterador': i, 'acumul': acumul, 'time_spent': ((end - start)*1000) }
+    memory = psutil.Process(os.getpid()).memory_info().rss
+    return { 'iterador': i, 'acumul': acumul, 'time_spent': ((end - start)*1000), 'memory_usage': (memory / 1024) }
 
 def enviar_dados(dados):
     connection_str = "mysql+mysqlconnector://{user}:{password}@{host}/{db}"
     config = {
-        "user": "aluno",
-        "password": "sptech",
+        "user": "admin",
+        "password": "admin",
         "host": "localhost",
         "db":"projeto_pi"
     }
