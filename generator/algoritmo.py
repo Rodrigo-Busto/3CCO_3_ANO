@@ -11,7 +11,7 @@ def main():
     log.setLevel(logging.INFO)
 
     log.info("Gerando dados")
-    dados = [gerar_dado(i) for i in range(10_000, 1000_000, 10_000)]
+    dados = [gerar_dado(i) for i in range(10_000, 1_010_000, 10_000)]
     log.info("Enviando dados")
     enviar_dados(dados)
 
