@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import logging
 import sys
+from os import environ
 
 def main():
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s')
@@ -27,10 +28,10 @@ def gerar_dado(n):
 def enviar_dados(dados):
     connection_str = "mysql+mysqlconnector://{user}:{password}@{host}/{db}"
     config = {
-        "user": "admin",
-        "password": "admin",
-        "host": "localhost",
-        "db":"projeto_pi"
+        "user": environ.get("DB_USER", "admin"), 
+        "password":environ.get("DB_PASSWORD", "admin"),
+        "host": environ.get("DB_HOST", "localhost"),
+        "db": environ.get("DB_NAME", "projeto_pi")
     }
     con = create_engine(connection_str.format(**config))
     df = pd.DataFrame(dados)

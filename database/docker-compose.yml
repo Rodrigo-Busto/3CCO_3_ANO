@@ -1,8 +1,7 @@
 version: '3.9'
 services:
   database:
-    build: .
-    image: database/mysql
+    build: ./database
     ports:
       - 3306:3306
     environment:
