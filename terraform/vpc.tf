@@ -6,7 +6,14 @@ module "vpc" {
 
   azs             = ["us-east-1a"]
   private_subnets = ["172.16.9.0/25"]
-  public_subnets  = ["172.16.9.127/25"]
+  private_subnet_tags = {
+    access_type = "private"
+  }
+
+  public_subnets  = ["172.16.9.128/25"]
+  public_subnet_tags = {
+    access_type = "public"
+  }
 
   enable_nat_gateway     = false
   single_nat_gateway     = false
@@ -15,7 +22,6 @@ module "vpc" {
 
   tags = {
     Terraform   = "true"
-    Environment = "dev"
   }
 }
 
