@@ -1,9 +1,12 @@
 import time
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 import pandas as pd
 import logging
-import sys
+import json
+import random
 from os import environ
+import memory_profiler as mp
 
 def main():
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s')
@@ -17,13 +20,39 @@ def main():
 
 def gerar_dado(n):
     start = time.time()
-    acumul = 0
     memory = 0
-    for i in range(1, n+1):
-        acumul += i
-        memory += sys.getsizeof(acumul)
+
+    country = random_country()
+    gender = random.choice(["M", "F"])
+    birthday = random_date_between(datetime(2005, 1, 1), datetime(2016, 12, 31))
+    score = random.randint(1, 53)
+    autism = random_autism_from_score(score)
     end = time.time()
-    return { 'iterador': i, 'acumul': acumul, 'time_spent': ((end - start)*1000), 'memory_usage': memory }
+    memory = round(mp.memory_usage()[0], 2)
+    return { 'score': score, 'autism': autism, 'gender': gender, 'birthday': birthday, 'country': country,'time_spent': ((end - start)*1000), 'memory_usage': memory }
+
+def random_country():
+    with open("countries.json") as f:
+        locations = json.load(f)
+    return random.choice(locations)["code"]
+
+def random_date_between(start_date: datetime, end_date: datetime):
+    delta = end_date - start_date
+    random_delta = random.randrange(delta.total_seconds())
+    return start_date + timedelta(seconds = random_delta)
+
+def random_autism_from_score(score):
+    autism_possible = 14
+    false_positive = random.randint(1, 100)
+    false_positive_rate = 22
+    if score > autism_possible and false_positive < false_positive_rate:
+        autism = True
+    elif score <= autism_possible:
+        autism = False
+    else:
+        true_positive_rate = 90
+        autism = random.randint(1, 100) < true_positive_rate
+    return autism
 
 def enviar_dados(dados):
     connection_str = "mysql+mysqlconnector://{user}:{password}@{host}/{db}"
@@ -35,7 +64,7 @@ def enviar_dados(dados):
     }
     con = create_engine(connection_str.format(**config))
     df = pd.DataFrame(dados)
-    df.to_sql("acumul_acelerate", con=con, if_exists="append", index=False)
+    df.to_sql("autism_screening", con=con, if_exists="append", index=False)
 
 if __name__ == "__main__":
     main()

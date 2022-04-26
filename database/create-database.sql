@@ -1,9 +1,12 @@
 CREATE DATABASE IF NOT EXISTS projeto_pi;
 USE projeto_pi;
 
-CREATE TABLE acumul_acelerate(
-    acumul BIGINT,
-    iterador INT,
+CREATE TABLE autism_screening(
+    score INT,
+    autism BOOLEAN,
+    gender CHAR(1),
+    birthday DATE,
+    country CHAR(2),
     time_spent DECIMAL(12, 9),
-    memory_usage INT
+    memory_usage DECIMAL(10,2)
 );
