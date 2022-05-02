@@ -165,3 +165,6 @@ terraform.rc
 
 # Private Keys
 *.pem
+
+# VS Code
+.vscode
