@@ -6,6 +6,8 @@ from apache_beam.typehints import Dict, Any, Generator
 
 def run():
     stopwords = load_stopwords()
+    lexicon = load_lexicon()
+    output_header = "classification,count"
     options = PipelineOptions()
     with beam.Pipeline(options=options) as p:
         (
@@ -16,7 +18,10 @@ def run():
             | "Tokenize words" >> beam.ParDo(TokenizeFn())
             | "Remove special characters" >> beam.ParDo(RemoveSpecialCharacters())
             | "Filter stopwords" >> beam.ParDo(FilterStopWordsFn(stopwords=stopwords))
-            | "Printing lines" >> beam.Map(print)
+            | "Classify words" >> beam.ParDo(ClassifyFn(lexicon=lexicon))
+            | "Count classifications" >> beam.combiners.Count.PerKey()
+            | "Parse to CSV" >> beam.ParDo(ParseToCsvFn())
+            | "Save result" >> beam.io.WriteToText("./data/gold/sentiment-analysis", file_name_suffix=".csv", header=output_header)
         )
 
 class ParserFn(beam.DoFn):
@@ -31,6 +36,10 @@ class TokenizeFn(beam.DoFn):
     def process(self, element: Dict[str, Any]) -> Generator[tuple, None, None]:
         yield element["text"].split()
 
+class RemoveSpecialCharacters(beam.DoFn):
+    def process(self, element):
+        for word in element:
+            yield ''.join(w for w in word.lower() if w.isalnum()) 
 class FilterStopWordsFn(beam.DoFn):
     def __init__(self, stopwords: List):
         super().__init__()
@@ -45,10 +54,29 @@ def load_stopwords():
         lines = f.readlines()
     return [l.replace("\n", "") for l in lines]
 
-class RemoveSpecialCharacters(beam.DoFn):
+class ClassifyFn(beam.DoFn):
+    def __init__(self, lexicon: dict):
+        super().__init__()
+        self.lexicon = lexicon
+    
     def process(self, element):
-        for word in element:
-            yield ''.join(w for w in word.lower() if w.isalnum()) 
+        polarity = self.lexicon.get(element, "neutral")
+        yield (polarity, element)
+
+def load_lexicon():
+    with open("./lexicon.txt") as f:
+        lines = f.readlines()
+    lexicon = {}
+    for l in lines:
+        splited = l.split()
+        word, polarity = splited[2], splited[5]
+        word, polarity = word.split("=")[1], polarity.split("=")[1]
+        lexicon[word] = polarity
+    return lexicon
+
+class ParseToCsvFn(beam.DoFn):
+    def process(self, element):
+        yield ",".join([str(e) for e in element])
 
 if __name__ == "__main__":
     run()
