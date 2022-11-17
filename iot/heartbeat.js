@@ -66,7 +66,7 @@ function battery() {
 
 function parseBeat(beat, sweat, battery) {
     const msg = new Message(
-        `${beat},${sweat},${battery}`
+        `{"tl": "${beat},${sweat},${battery}"}`
     )
     msg.properties.add("sensorID", "VSLog")
     return msg
